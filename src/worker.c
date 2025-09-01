@@ -71,6 +71,13 @@ int check_result_exists() {
  * Usa O_CREAT | O_EXCL para garantir escrita atômica (apenas um worker escreve)
  */
 void save_result(int worker_id, const char *password) {
+    int fd = open("Password.txt", O_CREAT | O_EXCL | O_WRONLY, 0664); //0664 não torna o arquivo executável
+    if (fd == -1) perror("Arquivo já criado.");
+    if (fd >= 0 ){
+        char buffer[256];
+        size_t tam = sizeof(password) - 1; //checar se da certo
+    }
+
     // TODO 2: Implementar gravação atômica do resultado
     // OBJETIVO: Garantir que apenas UM worker escreva no arquivo
     // DICA: Use O_CREAT | O_EXCL - falha se arquivo já existe
