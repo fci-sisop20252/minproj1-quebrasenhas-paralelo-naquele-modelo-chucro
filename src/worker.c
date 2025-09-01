@@ -33,7 +33,8 @@
  */
 int increment_password(char *password, const char *charset, int charset_len, int password_len) {
     
-    // TODO 1: Implementar o algoritmo de incremento de senha
+    //ja finalizado  
+    //TODO 1: Implementar o algoritmo de incremento de senha
     // OBJETIVO: Incrementar senha como um contador (ex: aaa -> aab -> aac -> aad...)
     // DICA: Começar do último caractere, como somar 1 em um número
     // DICA: Se um caractere "estoura", volta ao primeiro e incrementa o caracter a esquerda (aay -> aaz -> aba)
@@ -46,7 +47,24 @@ int increment_password(char *password, const char *charset, int charset_len, int
     // - Se estourou: definir como primeiro caractere e continuar loop
     // - Se todos estouraram: retornar 0 (fim do espaço)
     
-    return 0;  // SUBSTITUA por sua implementação
+    for (int i = password_len -1; i >= 0; i--){
+         int posicao_atual = -1;
+         for(int j = password_len -1; j >=0; j--){
+            if (password[i] == charset[j]){
+                posicao_atual = j;
+                break; 
+            }
+
+         }
+         if(posicao_atual < charset_len - 1){
+            password[i] = charset[posicao_atual + 1];
+            return 1;
+         }
+         else {
+            password[i] = charset[0];
+         }
+
+    }
 }
 
 /**
