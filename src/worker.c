@@ -83,11 +83,16 @@ int check_result_exists() {
  * Usa O_CREAT | O_EXCL para garantir escrita atômica (apenas um worker escreve)
  */
 void save_result(int worker_id, const char *password) {
-    int fd = open("Password.txt", O_CREAT | O_EXCL | O_WRONLY, 0664); //0664 não torna o arquivo executável
-    if (fd == -1) perror("Arquivo já criado.");
+    int fd = open("Password.txt", O_CREAT | O_EXCL | O_WRONLY, 0664); 
+    //creat - cria arquivo se nao existir, excl - retorna erro (-1) se o arq já existir,
+    //wronly - write read only, 0664 impede o arquivo de ser executável
+    if (fd == -1) perror("Arquivo já criado, outro worker encontrou.");
     if (fd >= 0 ){
         char buffer[256];
-        size_t tam = sizeof(password) - 1; //checar se da certo
+        int len = snprintf(buffer, sizeof(buffer), "%d:%s\n", worker_id, password); //imprime os dados formatados para o buffer
+        write(fd, buffer, len);
+        close(fd);
+        printf("[Worker %d] Senha salva!\n", worker_id);
     }
 
     // TODO 2: Implementar gravação atômica do resultado
