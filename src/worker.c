@@ -32,7 +32,6 @@
  * @return 1 se incrementou com sucesso, 0 se chegou ao limite (overflow)
  */
 int increment_password(char *password, const char *charset, int charset_len, int password_len) {
-
     for (int i = password_len-1; i >= 0; i--){
         int ind = 0;
         while(ind < charset_len && password[i] != charset[ind]) ind++;
@@ -59,6 +58,7 @@ int increment_password(char *password, const char *charset, int charset_len, int
     // - Se estourou: definir como primeiro caractere e continuar loop
     // - Se todos estouraram: retornar 0 (fim do espaço)
     
+    return 0;  // SUBSTITUA por sua implementação
 }
 
 /**

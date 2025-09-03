@@ -49,8 +49,7 @@ long long calculate_search_space(int charset_len, int password_len) {
  * @param password_len Comprimento da senha
  * @param output Buffer para armazenar a senha gerada
  */
-void index_to_password(long long index, const char *charset, int charset_len,
-                       int password_len, char *output) {
+void index_to_password(long long index, const char *charset, int charset_len, int password_len, char *output) {
     for (int i = password_len - 1; i >= 0; i--) {
         output[i] = charset[index % charset_len];
         index /= charset_len;
@@ -62,7 +61,8 @@ void index_to_password(long long index, const char *charset, int charset_len,
  * Função principal do coordenador
  */
 int main(int argc, char *argv[]) {
-    // TODO 1: Validar argumentos de entrada
+    // feito 
+    //TODO 1: Validar argumentos de entrada
     // Verificar se argc == 5 (programa + 4 argumentos)
     // Se não, imprimir mensagem de uso e sair com código 1
 
@@ -80,7 +80,8 @@ int main(int argc, char *argv[]) {
     int num_workers = atoi(argv[4]);
     int charset_len = strlen(charset);
 
-    // TODO: Adicionar validações dos parâmetros
+    // feito 
+    //TODO: Adicionar validações dos parâmetros
     // - password_len deve estar entre 1 e 10
     // - num_workers deve estar entre 1 e MAX_WORKERS
     // - charset não pode ser vazio
@@ -118,7 +119,8 @@ int main(int argc, char *argv[]) {
     // Registrar tempo de início
     time_t start_time = time(NULL);
 
-    // TODO 2: Dividir o espaço de busca entre os workers
+    // feito 
+    //TODO 2: Dividir o espaço de busca entre os workers
     // Calcular quantas senhas cada worker deve verificar
     // DICA: Use divisão inteira e distribua o resto entre os primeiros workers
 
@@ -136,14 +138,69 @@ int main(int argc, char *argv[]) {
     printf("Iniciando workers...\n");
 
     // IMPLEMENTE AQUI: Loop para criar workers
-    for (int i = 0; i < num_workers; i++) {
-        // TODO: Calcular intervalo de senhas para este worker
-        // TODO: Converter indices para senhas de inicio e fim
+      for (int i = 0; i < num_workers; i++) {
+        // TODO: feito Calcular intervalo de senhas para este worker
+        long long start_index, end_index;
+        long long offset = i * password_per_worker;
+        if (i < remaining) {
+          offset += i;  // worker faz mais 1
+        }
+        else {
+          offset += remaining;
+        }
+        long long count = password_per_worker;
+        if (i < remaining) {
+          count += 1;
+        }
+        start_index = offset;
+        end_index = offset + count - 1;
+
+
+        // TODO: feito Converter indices para senhas de inicio e fim
+        char start_password[password_len + 1];
+        char end_password[password_len + 1];
+        index_to_password(start_index, charset, charset_len, password_len, start_password);
+        index_to_password(end_index, charset, charset_len, password_len, end_password);
+        printf("Worker %d → intervalo: %s até %s\n", i, start_password, end_password);
+
+        // TODO 4:
+
+        pid_t pid = fork(); // é tipo um ID (ent cada criação um fork é gerado um ID)
+        
+        if (pid < 0){ 
+          printf("Error");
+          exit(1);
+        }
+        if(pid == 0){ // ID foi criado ent começou o processo de virar work
+          char password_len_str[4], worker_id_str[4]; // o execl só aceita string ent converti os bgl
+          sprintf(password_len_str, "%d", password_len);
+          sprintf(worker_id_str, "%d", i);
+          exit(1);
+
+          execl(
+            "./worker", "worker",
+            target_hash,
+            start_password,
+            end_password,
+            charset,
+            password_len_str,
+            worker_id_str,
+            NULL
+          );
+          perror("Error");
+          exit(1);
+        }
+        
+        workers[i] = pid; // armazena o pid 
+        // pode dar bomba pq eu nao quis usar if else, ent caso de estrago já sabe oq fazer
+}
         // TODO 4: Usar fork() para criar processo filho
+
+
         // TODO 5: No processo pai: armazenar PID
         // TODO 6: No processo filho: usar execl() para executar worker
         // TODO 7: Tratar erros de fork() e execl()
-    }
+    
 
     printf("\nTodos os workers foram iniciados. Aguardando conclusão...\n");
 
