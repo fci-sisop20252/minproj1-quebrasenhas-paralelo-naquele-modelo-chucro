@@ -163,8 +163,40 @@ int main(int argc, char *argv[]) {
         index_to_password(end_index, charset, charset_len, password_len, end_password);
         printf("Worker %d → intervalo: %s até %s\n", i, start_password, end_password);
 
+        // TODO 4:
+
+        pid_t pid = fork(); // é tipo um ID (ent cada criação um fork é gerado um ID)
+        
+        if (pid < 0){ 
+          printf("Error");
+          exit(1);
+        }
+        if(pid == 0){ // ID foi criado ent começou o processo de virar work
+          char password_len_str[4], worker_id_str[4]; // o execl só aceita string ent converti os bgl
+          sprintf(password_len_str, "%d", password_len);
+          sprintf(worker_id_str, "%d", i);
+          exit(1);
+
+          execl(
+            "./worker", "worker",
+            target_hash,
+            start_password,
+            end_password,
+            charset,
+            password_len_str,
+            worker_id_str,
+            NULL
+          );
+          perror("Error");
+          exit(1);
+        }
+        
+        workers[i] = pid; // armazena o pid 
+        // pode dar bomba pq eu nao quis usar if else, ent caso de estrago já sabe oq fazer
 }
         // TODO 4: Usar fork() para criar processo filho
+
+
         // TODO 5: No processo pai: armazenar PID
         // TODO 6: No processo filho: usar execl() para executar worker
         // TODO 7: Tratar erros de fork() e execl()
