@@ -17,12 +17,12 @@
  * TODO 5: No processo pai: armazenar PID ✅
  * TODO 6: No processo filho: usar execl() para executar worker ✅
  * TODO 7: Tratar erros de fork() e execl() ✅
- * TODO 8: Aguardar todos os workers terminarem usando wait()
+ * TODO 8: Aguardar todos os workers terminarem usando wait() ✅
  * TODO 9: Verificar se algum worker encontrou a senha
  * TODO 10: Calcular e exibir estatísticas de performance
  */
 
-/**
+ /**
  * PROCESSO COORDENADOR - Mini-Projeto 1: Quebra de Senhas Paralelo
  *
  * Este programa coordena múltiplos workers para quebrar senhas MD5 em paralelo.
@@ -55,7 +55,7 @@ long long calculate_search_space(int charset_len, int password_len) {
 
 /**
  * Converte um índice numérico para uma senha
- * Usado para definir os limites de cada worker
+* Usado para definir os limites de cada worker
  *
  * @param index Índice numérico da senha
  * @param charset Conjunto de caracteres
@@ -211,7 +211,6 @@ int main(int argc, char *argv[]) {
 
     // TODO 8:
     // IMPORTANTE: O pai deve aguardar TODOS os filhos para evitar zumbis
-
     // IMPLEMENTE AQUI:
     // - Loop para aguardar cada worker terminar
     // - Usar wait() para capturar status de saída
@@ -220,6 +219,31 @@ int main(int argc, char *argv[]) {
     // - Contar quantos workers terminaram
 
     // Registrar tempo de fim
+    pid_t pid_worker;  
+    int workers_ativos = num_workers;  
+
+    while ((pid_worker = wait(&status)) > 0) {
+        workers_ativos--;  
+        for (int i = 0; i < num_workers; i++) {
+            if (workers[i] == pid_worker) {
+                if ((status & 0x7F) == 0) { // terminou normalmente
+                    int codigo_saida = (status >> 8) & 0xFF;
+                    printf("Worker %d (PID: %d) terminou com código %d.\n", 
+                           i, pid_worker, codigo_saida);
+                } else { // terminou por sinal
+                    int sinal = status & 0x7F;
+                    printf("Worker %d (PID: %d) terminou por sinal %d.\n", 
+                           i, pid_worker, sinal);
+                }
+                break;
+            }
+        }
+
+        if (workers_ativos == 0) {
+            break;  
+        }
+    }
+
     time_t end_time = time(NULL);
     double elapsed_time = difftime(end_time, start_time);
 
@@ -227,14 +251,12 @@ int main(int argc, char *argv[]) {
 
     // TODO 9: Verificar se algum worker encontrou a senha
     // Ler o arquivo password_found.txt se existir
-
     // IMPLEMENTE AQUI:
     // - Abrir arquivo RESULT_FILE para leitura
     // - Ler conteúdo do arquivo
     // - Fazer parse do formato "worker_id:password"
     // - Verificar o hash usando md5_string()
     // - Exibir resultado encontrado
-
     // Estatísticas finais (opcional)
     // TODO 10: Calcular e exibir estatísticas de performance
 
