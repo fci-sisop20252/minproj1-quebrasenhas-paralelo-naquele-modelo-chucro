@@ -269,6 +269,10 @@ int main(int argc, char *argv[]) {
       return 1;
     }
     buffer[bytes_lidos] = '\0'; //inclui para indicar o fim da "string"
+    char *nl = strchr(buffer, '\n'); //procura \n da senha
+    if (nl){
+      *nl = '\0'; //se existir ele é removido
+    } 
     int indiceSeparador = -1;
     for(int i = 0; buffer[i] != '\0'; i++){
       if (buffer[i] == ':') {
@@ -294,12 +298,13 @@ int main(int argc, char *argv[]) {
     printf("Hash gerado com a senha encontrada: %s\n", hashGerado);
 
     if (strcmp(hashGerado, target_hash) == 0) { //compara string e retorna 0 se igual
-      printf("Senha confirmada!\n");
+      printf("Verificação: Senha encontrada!\n");
     } else {
-      printf("Senha diferente do target. Erro na busca!");
+      printf("Verificação: Senha diferente do target. Erro na busca!\n");
     }
 
-    printf("Target: %s\nSenha encontrada: %s\n",target_hash,inicioSenha);
+    printf("Hash Target: %s\nHash Senha encontrada: %s\n",target_hash,hashGerado);
+    printf("Senha: %s\n", inicioSenha);
 
     // IMPLEMENTE AQUI:
     // - Abrir arquivo RESULT_FILE para leitura
