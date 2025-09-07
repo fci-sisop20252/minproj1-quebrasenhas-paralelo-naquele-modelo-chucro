@@ -37,6 +37,7 @@
 
 #define MAX_WORKERS 16
 #define RESULT_FILE "password_found.txt"
+#define BUFFER_SIZE 32
 
 /**
  * Calcula o tamanho total do espaço de busca
@@ -75,7 +76,10 @@ void index_to_password(long long index, const char *charset, int charset_len, in
  * Função principal do coordenador
  */
 
-int main(int argc, char *argv[]) { 
+int main(int argc, char *argv[]) {
+    char buffer[BUFFER_SIZE];
+    ssize_t bytes_lidos;
+    int fd;
     // TODO 1: 
     
     // Verificação de argc e mensagem de erro
@@ -99,13 +103,13 @@ int main(int argc, char *argv[]) {
     // -num_workers deve estar entre 1 e MAX_WORKERS
     // -charset não pode ser vazio
 
-    if (password_len < 1 && password_len > 10)
+    if (password_len < 1 || password_len > 10)
     {
       printf("Erro: tamanho da senha inválido!");
       exit(1);
     }
 
-    if (num_workers < 1 && num_workers > MAX_WORKERS)
+    if (num_workers < 1 || num_workers > MAX_WORKERS)
     {
       printf("Erro: número de workers inválido!");
       exit(1);
@@ -177,15 +181,15 @@ int main(int argc, char *argv[]) {
         
         // TODO 7:
         if (pid < 0){ 
-          printf("Error"); 
+          perror("fork"); 
           exit(1);
         }
 
         if(pid == 0){ // ID foi criado ent começou o processo de virar work
-          char password_len_str[4], worker_id_str[4]; // o execl só aceita string ent converti os bgl
-          sprintf(password_len_str, "%d", password_len);
-          sprintf(worker_id_str, "%d", i);
-          exit(1);
+          char password_len_str[16], worker_id_str[16]; // o execl só aceita string ent converti os bgl
+          snprintf(password_len_str, sizeof(password_len_str), "%d", password_len);
+          snprintf(worker_id_str,   sizeof(worker_id_str),   "%d", i);
+
 
           // TODO 6:
           execl(
@@ -196,10 +200,10 @@ int main(int argc, char *argv[]) {
             charset,
             password_len_str,
             worker_id_str,
-            NULL
+            (char *)NULL
           );
-          perror("Error");
-          exit(1);
+          perror("execl ./worker");
+          _exit(1);
         }
         // TODO 5:
         workers[i] = pid; // armazena o pid 
@@ -221,7 +225,7 @@ int main(int argc, char *argv[]) {
     // Registrar tempo de fim
     pid_t pid_worker;  
     int workers_ativos = num_workers;  
-
+    int status;
     while ((pid_worker = wait(&status)) > 0) {
         workers_ativos--;  
         for (int i = 0; i < num_workers; i++) {
@@ -251,6 +255,52 @@ int main(int argc, char *argv[]) {
 
     // TODO 9: Verificar se algum worker encontrou a senha
     // Ler o arquivo password_found.txt se existir
+    fd = open(RESULT_FILE, O_RDONLY); //Abrir o arquivo para leitura
+    if (fd < 0){ //se erro
+      perror("Erro ao abrir o arquivo.");
+      return 1;
+    }
+    //se deu bom
+    printf("Arquivo aberto! File descriptor: %d\n", fd);
+    bytes_lidos = read(fd, buffer, BUFFER_SIZE - 1); //copia o arquivo para o buffer
+    if (bytes_lidos < 0) {
+      perror("Erro na leitura");
+      close(fd);
+      return 1;
+    }
+    buffer[bytes_lidos] = '\0'; //inclui para indicar o fim da "string"
+    int indiceSeparador = -1;
+    for(int i = 0; buffer[i] != '\0'; i++){
+      if (buffer[i] == ':') {
+        indiceSeparador = i;
+        break;
+      }
+    }
+    if (indiceSeparador == -1) {
+      printf("Separador não encontrado.");
+      close(fd);
+      return 1;
+    }
+    char *inicioWorker = buffer; //aponta para posiçao 0 do buffer. não precisa especificar quando é a pos 0. buffer = &buffer[0] aqui
+    char *inicioSenha = &buffer[indiceSeparador] + 1; //aponta para posiçao de inicio da senha. o & para pegar o endereço
+    int workerAchou = atoi(inicioWorker); //transforma em int a partir do end indicado por inicioWorker
+    printf("Worker: %d achou a senha: %s\n", workerAchou, inicioSenha);
+    if (close(fd) < 0) { //fechar o arquivo
+        perror("Erro ao fechar arquivo");
+        return 1;
+    }
+    char hashGerado[33]; //32 + \0
+    md5_string(inicioSenha, hashGerado);
+    printf("Hash gerado com a senha encontrada: %s\n", hashGerado);
+
+    if (strcmp(hashGerado, target_hash) == 0) { //compara string e retorna 0 se igual
+      printf("Senha confirmada!\n");
+    } else {
+      printf("Senha diferente do target. Erro na busca!");
+    }
+
+    printf("Target: %s\nSenha encontrada: %s\n",target_hash,inicioSenha);
+
     // IMPLEMENTE AQUI:
     // - Abrir arquivo RESULT_FILE para leitura
     // - Ler conteúdo do arquivo
