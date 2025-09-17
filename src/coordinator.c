@@ -20,6 +20,7 @@
  * TODO 8: Aguardar todos os workers terminarem usando wait() ✅
  * TODO 9: Verificar se algum worker encontrou a senha
  * TODO 10: Calcular e exibir estatísticas de performance
+ 
  */
 
  /**
@@ -314,6 +315,23 @@ int main(int argc, char *argv[]) {
     // - Exibir resultado encontrado
     // Estatísticas finais (opcional)
     // TODO 10: Calcular e exibir estatísticas de performance
+    printf("\n=== Estatísticas Globais ===\n");
 
+    int hours = (int)elapsed_time / 3600;
+    int minutes = ((int)elapsed_time % 3600) / 60;
+    int seconds = (int)elapsed_time % 60;
+    printf("Tempo total: %.0f segundos (%02d:%02d:%02d)\n", elapsed_time, hours, minutes, seconds);
+
+    printf("Espaço total: %lld combinações\n", total_space);
+
+    if (elapsed_time > 0) {
+        double rate = (double)total_space / elapsed_time;
+        printf("Velocidade média (teórica): %.2f combinações/s\n", rate);
+    }
+
+    long long avg_per_worker = total_space / num_workers;
+    long long remainder = total_space % num_workers;
+    printf("Média de combinações por worker: %lld (+1 para %lld workers)\n", avg_per_worker, remainder);
+ 
     return 0;
 }
