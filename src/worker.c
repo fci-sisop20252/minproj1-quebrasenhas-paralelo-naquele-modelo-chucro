@@ -19,12 +19,12 @@
 
 /**
  * PROCESSO TRABALHADOR - Mini-Projeto 1: Quebra de Senhas Paralelo
- * 
+ *
  * Este programa verifica um subconjunto do espaço de senhas, usando a biblioteca
  * MD5 FORNECIDA para calcular hashes e comparar com o hash alvo.
- * 
+ *
  * Uso: ./worker <hash_alvo> <senha_inicial> <senha_final> <charset> <tamanho> <worker_id>
- * 
+ *
  * EXECUTADO AUTOMATICAMENTE pelo coordinator através de fork() + execl()
  * SEU TRABALHO: Implementar os TODOs de busca e comunicação
  */
@@ -34,7 +34,7 @@
 
 /**
  * Incrementa uma senha para a próxima na ordem lexicográfica (aaa -> aab -> aac...)
- * 
+ *
  * @param password Senha atual (será modificada)
  * @param charset Conjunto de caracteres permitidos
  * @param charset_len Tamanho do conjunto
@@ -46,7 +46,7 @@ int increment_password(char *password, const char *charset, int charset_len, int
     for (int i = password_len-1; i >= 0; i--){
         int ind = 0;
         while(ind < charset_len && password[i] != charset[ind]) ind++;
-        if (ind >= charset) return 0; // character fora do charset
+        if (ind >= charset_len) return 0; // character fora do charset
         if (ind + 1 < charset_len) { // +1 no indice para não incluir o ultimo digito do chatset. -> ++
             password[i] = charset[ind+1];
             return 1;
@@ -59,7 +59,7 @@ int increment_password(char *password, const char *charset, int charset_len, int
 
 /**
  * Compara duas senhas lexicograficamente
- * 
+ *
  * @return -1 se a < b, 0 se a == b, 1 se a > b
  */
 int password_compare(const char *a, const char *b) {
@@ -79,7 +79,7 @@ int check_result_exists() {
  * Usa O_CREAT | O_EXCL para garantir escrita atômica (apenas um worker escreve)
  */
 void save_result(int worker_id, const char *password) {
-    int fd = open(RESULT_FILE, O_CREAT | O_EXCL | O_WRONLY, 0664); 
+    int fd = open(RESULT_FILE, O_CREAT | O_EXCL | O_WRONLY, 0664);
     //creat - cria arquivo se nao existir, excl - retorna erro (-1) se o arq já existir,
     //wronly - write read only, 0664 impede o arquivo de ser executável
     if (fd == -1) perror("Arquivo já criado, outro worker encontrou.");
@@ -99,7 +99,7 @@ int main(int argc, char *argv[]) {
         fprintf(stderr, "Uso interno: %s <hash> <start> <end> <charset> <len> <id>\n", argv[0]);
         return 1;
     }
-    
+
     // Parse dos argumentos
     const char *target_hash = argv[1];
     char *start_password = argv[2];
@@ -108,23 +108,23 @@ int main(int argc, char *argv[]) {
     int password_len = atoi(argv[5]);
     int worker_id = atoi(argv[6]);
     int charset_len = strlen(charset);
-    
+
     printf("[Worker %d] Iniciado: %s até %s\n", worker_id, start_password, end_password);
-    
+
     // Buffer para a senha atual
     char current_password[11];
     strcpy(current_password, start_password);
-    
+
     // Buffer para o hash calculado
     char computed_hash[33];
-    
+
     // Contadores para estatísticas
     long long passwords_checked = 0;
     time_t start_time = time(NULL);
     time_t last_progress_time = start_time;
-    
+
     // Loop principal de verificação
-    
+
     while (1) {
         // TODO 3:
         if (passwords_checked % PROGRESS_INTERVAL == 0)
@@ -149,23 +149,23 @@ int main(int argc, char *argv[]) {
 
         // TODO 6:
         if (!increment_password(current_password, charset, charset_len, password_len)) break;
-        
+
         // TODO 7:
         if (password_compare(current_password, end_password) > 0) break;
-        
+
         passwords_checked++;
     }
-    
+
     // Estatísticas finais
     time_t end_time = time(NULL);
     double total_time = difftime(end_time, start_time);
-    
-    printf("[Worker %d] Finalizado. Total: %lld senhas em %.2f segundos", 
+
+    printf("[Worker %d] Finalizado. Total: %lld senhas em %.2f segundos",
            worker_id, passwords_checked, total_time);
     if (total_time > 0) {
         printf(" (%.0f senhas/s)", passwords_checked / total_time);
     }
     printf("\n");
-    
+
     return 0;
 }
